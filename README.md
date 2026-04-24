@@ -5,14 +5,6 @@
 Aplicación fullstack para gestión de un catálogo de productos con categorías e ingredientes.  
 Relaciones N:N entre Producto↔Categoría y Producto↔Ingrediente.
 
-### Stack tecnológico
-
-| Capa | Tecnología |
-|------|-----------|
-| Backend | FastAPI · SQLModel · PostgreSQL · psycopg · Uvicorn |
-| Frontend | React · TypeScript · Vite · Tailwind CSS 4 · TanStack Query · react-router-dom |
-| Infraestructura | Docker · Docker Compose |
-
 ### Requisitos previos
 
 - Python 3.11+
@@ -50,6 +42,6 @@ npm run dev
 ```
 
 ### Link al video
-
-> _Completar con el link de YouTube/Drive_
+https://drive.google.com/drive/folders/1_9XbjXBgN69R36cCbzqhiShpYdydoiF_?usp=sharing
+> 
 
