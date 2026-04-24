@@ -4,7 +4,7 @@ import type { CategoriaCreate, CategoriaUpdate } from "../types/categoria";
 
 const QUERY_KEY = ["categorias"];
 
-export function useCategorias(params?: { nombre?: string; activo?: boolean; limit?: number }) {
+export function useCategorias(params?: { nombre?: string; activo?: boolean; offset?: number; limit?: number }) {
   return useQuery({
     queryKey: [...QUERY_KEY, params],
     queryFn: () => categoriasApi.list({ ...params, limit: params?.limit ?? 100 }),

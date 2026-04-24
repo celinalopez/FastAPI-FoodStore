@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
 import DataTable, { type Column } from "../../components/common/DataTable";
 import Modal from "../../components/common/Modal";
 import ConfirmDialog from "../../components/common/ConfirmDialog";
+import PaginationControls from "../../components/common/PaginationControls";
 import ProductoForm from "../../components/productos/ProductoForm";
 import LoadingState from "../../components/feedback/LoadingState";
 import ErrorState from "../../components/feedback/ErrorState";
@@ -20,16 +21,20 @@ import { useIngredientes } from "../../hooks/useIngredientes";
 import type { Producto, ProductoCreate } from "../../types/producto";
 
 export default function ProductosPage() {
+  const PAGE_SIZE = 20;
   const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [inactivando, setInactivando] = useState<Producto | null>(null);
   const [showInactivos, setShowInactivos] = useState(false);
+  const [page, setPage] = useState(1);
   const [alertMsg, setAlertMsg] = useState<string | null>(null);
-
-  const { data, isLoading, isError, error, refetch } = useProductos(
-    showInactivos ? undefined : { activo: true }
-  );
+  const listParams = {
+    ...(showInactivos ? {} : { activo: true }),
+    offset: (page - 1) * PAGE_SIZE,
+    limit: PAGE_SIZE,
+  };
+  const { data, isLoading, isError, error, refetch } = useProductos(listParams);
   const { data: editDetail } = useProducto(editingId ?? 0);
   const { data: categoriasData } = useCategorias({ activo: true });
   const { data: ingredientesData } = useIngredientes({ activo: true });
@@ -37,6 +42,11 @@ export default function ProductosPage() {
   const updateMut = useUpdateProducto();
   const inactivarMut = useInactivarProducto();
   const activarMut = useActivarProducto();
+  const totalPages = Math.max(1, Math.ceil((data?.total ?? 0) / PAGE_SIZE));
+
+  useEffect(() => {
+    setPage(1);
+  }, [showInactivos]);
 
   const columns: Column<Producto>[] = [
     { key: "id", header: "ID" },
@@ -137,6 +147,8 @@ export default function ProductosPage() {
       <DataTable
         columns={columns}
         data={data?.items ?? []}
+        pageSize={PAGE_SIZE}
+        padToPageSize
         onView={(prod) => navigate(`/productos/${prod.id}`)}
         onEdit={(prod) => { if (prod.activo) { setEditingId(prod.id); setModalOpen(true); } }}
         onDelete={(prod) => {
@@ -151,7 +163,14 @@ export default function ProductosPage() {
         }
         rowClassName={(prod) => (!prod.activo ? "opacity-50" : "")}
       />
-
+      <PaginationControls
+        page={page}
+        pageSize={PAGE_SIZE}
+        total={data?.total ?? 0}
+        onPrevious={() => setPage((prev) => Math.max(1, prev - 1))}
+        onNext={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+      />
+      
       <Modal
         isOpen={modalOpen}
         onClose={() => { setModalOpen(false); setEditingId(null); }}

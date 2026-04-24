@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AlertTriangle } from "lucide-react";
 import DataTable, { type Column } from "../../components/common/DataTable";
 import Modal from "../../components/common/Modal";
 import ConfirmDialog from "../../components/common/ConfirmDialog";
+import PaginationControls from "../../components/common/PaginationControls";
 import IngredienteForm from "../../components/ingredientes/IngredienteForm";
 import LoadingState from "../../components/feedback/LoadingState";
 import ErrorState from "../../components/feedback/ErrorState";
@@ -16,19 +17,29 @@ import {
 import type { Ingrediente, IngredienteCreate } from "../../types/ingrediente";
 
 export default function IngredientesPage() {
+  const PAGE_SIZE = 20;
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Ingrediente | null>(null);
   const [inactivando, setInactivando] = useState<Ingrediente | null>(null);
   const [showInactivos, setShowInactivos] = useState(false);
+  const [page, setPage] = useState(1);
+  const listParams = {
+    ...(showInactivos ? {} : { activo: true }),
+    offset: (page - 1) * PAGE_SIZE,
+    limit: PAGE_SIZE,
+  };
 
-  const { data, isLoading, isError, error, refetch } = useIngredientes(
-    showInactivos ? undefined : { activo: true }
-  );
+  const { data, isLoading, isError, error, refetch } = useIngredientes(listParams);
   const createMut = useCreateIngrediente();
   const updateMut = useUpdateIngrediente();
   const inactivarMut = useInactivarIngrediente();
   const activarMut = useActivarIngrediente();
+  const totalPages = Math.max(1, Math.ceil((data?.total ?? 0) / PAGE_SIZE));
 
+  useEffect(() => {
+    setPage(1);
+  }, [showInactivos]);
+  
   const columns: Column<Ingrediente>[] = [
     { key: "id", header: "ID" },
     { key: "nombre", header: "Nombre" },
@@ -92,12 +103,20 @@ export default function IngredientesPage() {
       </div>
 
       <DataTable columns={columns} data={data?.items ?? []}
+        pageSize={PAGE_SIZE}
+        padToPageSize
         onEdit={(ing) => { if (ing.activo) { setEditing(ing); setModalOpen(true); } }}
         onDelete={(ing) => { if (ing.activo) setInactivando(ing); else activarMut.mutate(ing.id); }}
         deleteLabel={(ing) => ing.activo ? "Inactivar" : "Activar"}
         deleteClassName={(ing) => ing.activo ? "text-red-600 hover:text-red-800" : "text-green-600 hover:text-green-800"}
         rowClassName={(ing) => (!ing.activo ? "opacity-50" : "")} />
-
+        <PaginationControls
+          page={page}
+          pageSize={PAGE_SIZE}
+          total={data?.total ?? 0}
+          onPrevious={() => setPage((prev) => Math.max(1, prev - 1))}
+          onNext={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+        />
       <Modal isOpen={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); }}
         title={editing ? "Editar Ingrediente" : "Nuevo Ingrediente"}>
         <IngredienteForm initial={editing} onSubmit={handleSubmit}

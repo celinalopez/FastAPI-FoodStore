@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import DataTable, { type Column } from "../../components/common/DataTable";
 import Modal from "../../components/common/Modal";
 import ConfirmDialog from "../../components/common/ConfirmDialog";
+import PaginationControls from "../../components/common/PaginationControls";
 import CategoriaForm from "../../components/categorias/CategoriaForm";
 import LoadingState from "../../components/feedback/LoadingState";
 import ErrorState from "../../components/feedback/ErrorState";
@@ -15,19 +16,30 @@ import {
 import type { Categoria, CategoriaCreate } from "../../types/categoria";
 
 export default function CategoriasPage() {
+  const PAGE_SIZE = 20;
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Categoria | null>(null);
   const [inactivando, setInactivando] = useState<Categoria | null>(null);
   const [showInactivos, setShowInactivos] = useState(false);
 
-  const { data, isLoading, isError, error, refetch } = useCategorias(
-    showInactivos ? undefined : { activo: true }
-  );
+  const [page, setPage] = useState(1);
+  const listParams = {
+    ...(showInactivos ? {} : { activo: true }),
+    offset: (page - 1) * PAGE_SIZE,
+    limit: PAGE_SIZE,
+  };
+
+  const { data, isLoading, isError, error, refetch } = useCategorias(listParams);
   const { data: allCats } = useCategorias({ activo: true });
   const createMut = useCreateCategoria();
   const updateMut = useUpdateCategoria();
   const inactivarMut = useInactivarCategoria();
   const activarMut = useActivarCategoria();
+  const totalPages = Math.max(1, Math.ceil((data?.total ?? 0) / PAGE_SIZE));
+
+  useEffect(() => {
+    setPage(1);
+  }, [showInactivos]);
 
   const parentName = (parentId: number | null) => {
     if (!parentId || !allCats) return "—";
@@ -85,12 +97,20 @@ export default function CategoriasPage() {
       </div>
 
       <DataTable columns={columns} data={data?.items ?? []}
+        pageSize={PAGE_SIZE}
+        padToPageSize
         onEdit={(cat) => { if (cat.activo) { setEditing(cat); setModalOpen(true); } }}
         onDelete={(cat) => { if (cat.activo) setInactivando(cat); else activarMut.mutate(cat.id); }}
         deleteLabel={(cat) => cat.activo ? "Inactivar" : "Activar"}
         deleteClassName={(cat) => cat.activo ? "text-red-600 hover:text-red-800" : "text-green-600 hover:text-green-800"}
         rowClassName={(cat) => (!cat.activo ? "opacity-50" : "")} />
-
+        <PaginationControls
+          page={page}
+          pageSize={PAGE_SIZE}
+          total={data?.total ?? 0}
+          onPrevious={() => setPage((prev) => Math.max(1, prev - 1))}
+          onNext={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+        />
       <Modal isOpen={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); }}
         title={editing ? "Editar Categoría" : "Nueva Categoría"}>
         <CategoriaForm initial={editing} categorias={allCats?.items ?? []} onSubmit={handleSubmit}

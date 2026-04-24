@@ -4,7 +4,7 @@ import type { ProductoCreate, ProductoUpdate } from "../types/producto";
 
 const QUERY_KEY = ["productos"];
 
-export function useProductos(params?: { nombre?: string; activo?: boolean; limit?: number }) {
+export function useProductos(params?: { nombre?: string; activo?: boolean; offset?: number; limit?: number }) {
   return useQuery({
     queryKey: [...QUERY_KEY, params],
     queryFn: () => productosApi.list({ ...params, limit: params?.limit ?? 100 }),

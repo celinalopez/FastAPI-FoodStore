@@ -4,7 +4,7 @@ import type { IngredienteCreate, IngredienteUpdate } from "../types/ingrediente"
 
 const QUERY_KEY = ["ingredientes"];
 
-export function useIngredientes(params?: { nombre?: string; activo?: boolean; limit?: number }) {
+export function useIngredientes(params?: { nombre?: string; activo?: boolean; offset?: number; limit?: number }) {
   return useQuery({
     queryKey: [...QUERY_KEY, params],
     queryFn: () => ingredientesApi.list({ ...params, limit: params?.limit ?? 100 }),
